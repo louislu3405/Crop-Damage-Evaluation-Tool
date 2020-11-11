@@ -50,5 +50,6 @@ To give an idea about how the thresholds should be set, here is an example of my
 
 The output of this tool is a raster crop damage map and a vector crop damage map. We can sum the area of the vector crop damage map to get the final estimated crop damaged area. 
 
+## Optical Satellites generated DVDI images as input
 
 
