@@ -52,4 +52,11 @@ The output of this tool is a raster crop damage map and a vector crop damage map
 
 ## Optical Satellites generated DVDI images as input
 
+The tool can only process a single frame for now. If we have a large ROI, consider using Sentinel-1 SAR image rather than DIDV images.
+
+### Image Preprocessing
+The image preprocessing for DVDI images is simple, we can just use [Google Earth Engine (GEE)](https://earthengine.google.com/) to finish the task. The first thing we need to do is get the authorization from Google to use GEE. Next, we download the GEE DVDI.js to get the JavaScript code for Google Earth Engine. Before we dump the code into GEE, we need to modify the first few lines of codes in order to fit our region of interest. The codes include dates, region of interest, export description, and export folder. After the code is run, click the task tab on the top right and export the preprocessed DVDI image to our google drive. 
+
+### Run the Crop Damage Evaluation Tool with DVDI images
+
 
