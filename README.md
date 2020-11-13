@@ -60,3 +60,7 @@ The image preprocessing for DVDI images is simple, we can just use [Google Earth
 ### Run the Crop Damage Evaluation Tool with DVDI images
 First, we go to this GitHub Repository and download the **QGIS py console code GEE 1.0.py**. This is the file that we can use for analyzing and generating the crop damage map. The usage of this tool is similar to the usage of the SAR tool. Copy and paste the code to python console in **QGIS with GRASS**, several windows will pop up and ask you to enter the inputs. After entering all the required inputs, the tool will start to run and we will get the output!
 
+
+
+
+Speical thanks to **NASA Harvest Team** for advising and designing the tool
