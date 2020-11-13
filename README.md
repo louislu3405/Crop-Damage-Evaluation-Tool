@@ -63,4 +63,4 @@ First, we go to this GitHub Repository and download the **QGIS py console code G
 
 
 
-Speical thanks to **NASA Harvest Team** for advising and designing the tool
+#### Speical thanks to **NASA Harvest Team** for advising and designing the tool
