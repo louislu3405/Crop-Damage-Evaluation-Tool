@@ -129,7 +129,17 @@ params = {
 
 processing.run("gdal:rasterize", params)
 
+# --- Calculate the total estimated damaged area ---
+layer = QgsVectorLayer(r"%s\FinalVector.shp"%workplace)
+features = layer.getFeatures()
+damaged_area = 0
+for feat in features:
+    attr = feat.attributes()[2]
+    damaged_area += int(attr)
 
+msg = QMessageBox()
+msg.setText("The total estimated damaged area is %s map units"%damaged_area)
+msg.show()
 
 ### Appendices
 '''

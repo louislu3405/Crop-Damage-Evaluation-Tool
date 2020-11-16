@@ -3,6 +3,7 @@
 # The Crop Damage Evaluation Tool to analyze the crop damage area using Sentinel-1 SLC images.
 # The Tool is designed to be run in QGIS Python console. 
 
+
 # ---Pop-up windows to ask the user to enter inputs---
 number_of_frame = QInputDialog.getText(None, "Number of Sets", "How many frame of images do you plan to use? ") # get the number of sets (frames) of images that will be used in the tool
 number_of_frame = int(number_of_frame[0]) # convert the input to integer
@@ -21,12 +22,13 @@ for input_a_set in range(number_of_frame): # Input multiple sets of different im
     boundary_file = boundary_file[0]
     image_set.append([input_bf_img,input_af_img,boundary_file]) # append the new frame data to the image set
 
-
+outputCRS = QInputDialog.getText(None, "Assign CRS","Please specify your Coordiante System for the output raster in EPSG. E.g., 'EPSG:32615': ")
 workplace = QInputDialog.getText(None, "Working Folder","Please specify your working folder: ")
 threshold_dB = QInputDialog.getText(None, "Pixel Difference Threshold","Please specify your pixel difference threshold: ")
 threshold_area = QInputDialog.getText(None, "Area Threshold","Please specify your area threshold: ")
 
 # transfer the input to the usable string format.
+outputCRS = outputCRS[0]
 workplace = workplace[0]
 threshold_dB = threshold_dB[0]
 threshold_area = threshold_area[0]
@@ -62,7 +64,6 @@ def create_pixel_difference_map(frame_data, frame_num,workplace):   # (frame dat
     # load the extent layer
     path_to_boundary = frame_data[2]
     bnd_layer = QgsVectorLayer(path_to_boundary,"boundary")
-    QgsProject.instance().addMapLayer(bnd_layer)
     # clip raster by mask layer
     diff_ras = QgsRasterLayer(r"%s\pixelDifferenceFrame%s.tif" %(workplace, frame_num),"diff_map")
     output = r"%s\pixel_differenceClip%s.tif"%(workplace, frame_num)
@@ -71,7 +72,7 @@ def create_pixel_difference_map(frame_data, frame_num,workplace):   # (frame dat
         'INPUT': diff_ras,
         'MASK': bnd_layer,
         'SOURCE_CRS': crs,
-        'TARGET_CRS': 'EPSG:32615',
+        'TARGET_CRS': QgsCoordinateReferenceSystem(outputCRS),
         'NODATA': None,
         'DATA_TYPE': 6,
         'OUTPUT': output
@@ -90,7 +91,7 @@ for i in range(number_of_frame):
 
 # --- mosaic the outputs to a new raster ---
 grid_list = pixel_difference_frames
-output = r"%s\mosaicRasterTest.sdat"%workplace
+output = r"%s\mosaicPixelDifference.sdat"%workplace
 
 params = {
     'GRIDS': grid_list,
@@ -109,9 +110,9 @@ processing.run("saga:mosaicrasterlayers", params)
 
 # --- Reclassify ---
 
-# Purpose: Reclassify the clipped raster by the first threshold: pixel-difference threhsold, to generate the preliminary damage map
-clip_ras = QgsRasterLayer(r"%s\pixel_difference.tif"%workplace)
-output = r"%s\qgsRclTest.tif"%workplace
+# Purpose: Reclassify the mosaicked raster by the first threshold: pixel-difference threhsold, to generate the preliminary damage map
+clip_ras = QgsRasterLayer(r"%s\mosaicPixelDifference.sdat"%workplace)
+output = r"%s\qgsRclThreshold1.tif"%workplace
 
 params = {
     'INPUT_RASTER': clip_ras,
@@ -124,10 +125,10 @@ params = {
 processing.run("qgis:reclassifybytable", params)
 
 
-# Shrink and Expand (using the same value)
+# --- Shrink and Expand (using the same value) ---
 
 # Purpose: Remove the small isolated group of pixels and fill the holes in main damaged area
-rcl_ras = QgsRasterLayer(r"%s\qgsRclTest.tif"%workplace)
+rcl_ras = QgsRasterLayer(r"%s\qgsRclThreshold1.tif"%workplace)
 output = r"%s\qgsShrinkExpandTest.tif"%workplace
     
 params = {
@@ -140,7 +141,6 @@ params = {
 }
 
 processing.run("saga:shrinkandexpand", params)
-
 
 # --- Raster to polygon ---
 
@@ -169,7 +169,6 @@ params = {
 
 processing.run("grass7:r.to.vect", params)
 
-
 # --- select by area ---
 # Purpose: add area to attribute
 shp = r"%s\qgsRtoV.shp"%workplace
@@ -182,7 +181,6 @@ params = {
 }
 
 processing.run("qgis:exportaddgeometrycolumns",params)
-
 
 # --- Extract By Attribute ---
 
@@ -199,7 +197,6 @@ params = {
 }
 
 processing.run("qgis:extractbyattribute", params)
-
 
 # ---Rasterrize---
 
@@ -223,7 +220,17 @@ params = {
 
 processing.run("gdal:rasterize", params)
 
+# --- Calculate the total estimated damaged area ---
+layer = QgsVectorLayer(r"%s\FinalVector.shp"%workplace)
+features = layer.getFeatures()
+damaged_area = 0
+for feat in features:
+    attr = feat.attributes()[2]
+    damaged_area += int(attr)
 
+msg = QMessageBox()
+msg.setText("The total estimated damaged area is %s map units"%damaged_area)
+msg.show()
 
 ### Appendices
 '''
@@ -231,4 +238,5 @@ processing.run("gdal:rasterize", params)
 test = processing.createAlgorithmDialog("gdal:cliprasterbymasklayer", params)
 test.show()
 processing.algorithmHelp("algorithm name")  # show algorithm help
+###QgsProject.instance().addMapLayer(bnd_layer)
 '''
